@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spencer Dennis — Archive</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root { --ink: #1a1714; }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--ink);
+    overflow: hidden;
+    cursor: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .stage {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .photo-wrap {
+    position: absolute;
+    width: 92vw;
+    height: 88vh;
+  }
+
+  .photo {
+    position: absolute;
+    inset: 0;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0;
+    will-change: opacity;
+    transition: opacity 0.45s ease;
+  }
+
+  .photo.visible { opacity: 1; }
+
+  .stage::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 10;
+    opacity: 0.3;
+    mix-blend-mode: overlay;
+  }
+
+  .ui {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 24px 28px;
+  }
+
+  .top { display: flex; justify-content: space-between; align-items: flex-start; }
+
+  .name {
+    font-family: 'IM Fell English', serif;
+    font-size: 14px;
+    color: rgba(240,236,228,0.65);
+    text-shadow: 0 1px 12px rgba(0,0,0,0.6);
+  }
+
+  .info-btn {
+    pointer-events: all;
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    line-height: 1;
+    cursor: none;
+    opacity: 0.7;
+    transition: opacity 0.3s, transform 0.4s;
+    filter: drop-shadow(0 1px 6px rgba(0,0,0,0.5));
+  }
+  .info-btn:hover { opacity: 1; transform: rotate(-15deg) scale(1.15); }
+
+  .bottom { display: flex; justify-content: space-between; align-items: flex-end; }
+
+  .year {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 12px;
+    color: rgba(240,236,228,0.45);
+    text-shadow: 0 1px 8px rgba(0,0,0,0.6);
+    letter-spacing: 0.04em;
+  }
+
+  .hint {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 11px;
+    color: rgba(240,236,228,0.28);
+    letter-spacing: 0.05em;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.6);
+    transition: opacity 1.4s;
+  }
+  .hint.hidden { opacity: 0; }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: rgba(14,12,10,0.9);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s cubic-bezier(0.4,0,0.2,1);
+  }
+  .overlay.open { opacity: 1; pointer-events: all; }
+
+  .overlay-close {
+    position: absolute;
+    top: 24px; right: 28px;
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    cursor: none;
+    opacity: 0.4;
+    transition: opacity 0.3s, transform 0.4s;
+    line-height: 1;
+  }
+  .overlay-close:hover { opacity: 0.9; transform: rotate(15deg) scale(1.1); }
+
+  .overlay-content {
+    text-align: center;
+    max-width: 380px;
+    padding: 0 40px;
+    transform: translateY(16px);
+    transition: transform 0.55s cubic-bezier(0.4,0,0.2,1);
+  }
+  .overlay.open .overlay-content { transform: translateY(0); }
+
+  .overlay-otter { font-size: 28px; margin-bottom: 20px; display: block; opacity: 0.85; }
+
+  .overlay-name {
+    font-family: 'IM Fell English', serif;
+    font-size: 20px;
+    color: rgba(240,236,228,0.85);
+    letter-spacing: 0.02em;
+    margin-bottom: 18px;
+  }
+
+  .overlay-bio {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 14px;
+    line-height: 1.85;
+    color: rgba(240,236,228,0.44);
+    margin-bottom: 36px;
+  }
+
+  .overlay-links { display: flex; align-items: center; justify-content: center; gap: 24px; }
+
+  .overlay-link {
+    font-family: 'IM Fell English', serif;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(240,236,228,0.35);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(240,236,228,0.1);
+    padding-bottom: 2px;
+    transition: color 0.3s, border-color 0.3s;
+    cursor: none;
+  }
+  .overlay-link:hover { color: rgba(240,236,228,0.82); border-color: rgba(240,236,228,0.42); }
+  .overlay-divider { width: 1px; height: 11px; background: rgba(240,236,228,0.1); }
+
+  @media (hover: hover) and (pointer: fine) {
+    .cursor-dot {
+      position: fixed;
+      width: 5px; height: 5px;
+      background: rgba(240,236,228,0.85);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%,-50%);
+      transition: width 0.25s, height 0.25s, opacity 0.3s;
+      mix-blend-mode: difference;
+    }
+    .cursor-dot.clicking { width: 22px; height: 22px; opacity: 0.45; }
+  }
+
+  @media (hover: none) {
+    .cursor-dot { display: none; }
+    .info-btn, .overlay-close, .overlay-link { cursor: pointer; }
+  }
+
+  .loader {
+    position: fixed;
+    inset: 0;
+    background: var(--ink);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.8s;
+  }
+  .loader.fade { opacity: 0; pointer-events: none; }
+  .loader-text {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 12px;
+    color: rgba(240,236,228,0.25);
+    letter-spacing: 0.14em;
+  }
+
+  @media (max-width: 600px) {
+    .ui { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="loader" id="loader"><span class="loader-text">archive</span></div>
+
+<div class="stage">
+  <div class="photo-wrap" id="photoWrap">
+    <div class="photo" id="photoA"></div>
+    <div class="photo" id="photoB"></div>
+  </div>
+</div>
+
+<div class="ui">
+  <div class="top">
+    <div class="name">Spencer Dennis</div>
+    <button class="info-btn" id="infoBtn" aria-label="About">🦦</button>
+  </div>
+  <div class="bottom">
+    <div class="year" id="yearLabel"></div>
+    <div class="hint" id="hint">click anywhere</div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <button class="overlay-close" id="overlayClose" aria-label="Close">🦦</button>
+  <div class="overlay-content">
+    <span class="overlay-otter">🦦</span>
+    <div class="overlay-name">Spencer Dennis</div>
+    <p class="overlay-bio">
+      Director, Photographer, and Producer based between
+      Los Angeles and New York. This archive acts as an artifact
+      to show beyond doubt that I am alive.
+    </p>
+    <div class="overlay-links">
+      <a href="https://curfew.tv" target="_blank" rel="noopener" class="overlay-link">Curfew</a>
+      <div class="overlay-divider"></div>
+      <a href="https://instagram.com/spencerdennis" target="_blank" rel="noopener" class="overlay-link">Instagram</a>
+    </div>
+  </div>
+</div>
+
+<div class="cursor-dot" id="cursorDot"></div>
+
+<script>
+const CLOUD_NAME = 'ddznpguna';
+const TAG = 'archive';
+const YEAR_TAGS = new Set(['2010','2011','2012','2013','2014','2015','2016','2017','2018','2019','2020','2021','2022','2023','2024','2025','2026']);
+
+const photoWrap    = document.getElementById('photoWrap');
+const photoA       = document.getElementById('photoA');
+const photoB       = document.getElementById('photoB');
+const yearLabel    = document.getElementById('yearLabel');
+const hint         = document.getElementById('hint');
+const loader       = document.getElementById('loader');
+const loaderText   = document.querySelector('.loader-text');
+const cursorDot    = document.getElementById('cursorDot');
+const infoBtn      = document.getElementById('infoBtn');
+const overlay      = document.getElementById('overlay');
+const overlayClose = document.getElementById('overlayClose');
+
+let PHOTOS = [];
+let current = 0;
+let activeSlot = 'A';
+let interacted = false;
+let isTransitioning = false;
+let overlayOpen = false;
+const loaded = new Set();
+
+function cloudUrl(publicId) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = Math.round(window.innerWidth * dpr * 0.95);
+  const capped = Math.min(w, 3200);
+  return `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/w_${capped},c_limit,q_90,f_auto/${publicId}`;
+}
+
+function extractYear(r) {
+  if (r.context && r.context.custom && r.context.custom.year) {
+    return r.context.custom.year;
+  }
+  if (r.tags) {
+    for (const t of r.tags) { if (YEAR_TAGS.has(t)) return t; }
+  }
+  return '';
+}
+
+async function fetchPhotos() {
+  const res = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/image/list/${TAG}.json`);
+  if (!res.ok) throw new Error('fetch failed');
+  const data = await res.json();
+  return data.resources.map(r => ({
+    url: cloudUrl(r.public_id),
+    year: extractYear(r),
+    width: r.width,
+    height: r.height,
+  }));
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function preloadOne(url) {
+  if (loaded.has(url)) return Promise.resolve();
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => { loaded.add(url); res(); };
+    img.onerror = () => res();
+    img.src = url;
+  });
+}
+
+function preloadAll() {
+  PHOTOS.forEach((p, i) => {
+    if (i === 0) return;
+    setTimeout(() => preloadOne(p.url), i * 250);
+  });
+}
+
+async function init() {
+  try {
+    PHOTOS = shuffle(await fetchPhotos());
+    if (!PHOTOS.length) throw new Error('no photos');
+
+    await preloadOne(PHOTOS[0].url);
+
+    photoA.style.backgroundImage = `url('${PHOTOS[0].url}')`;
+    yearLabel.textContent = PHOTOS[0].year;
+
+    photoA.style.transition = 'none';
+    photoA.style.opacity = '1';
+    photoA.classList.add('visible');
+
+    requestAnimationFrame(() => { photoA.style.transition = ''; });
+
+    activeSlot = 'A';
+    current = 0;
+    preloadAll();
+
+    setTimeout(() => {
+      loader.classList.add('fade');
+      setTimeout(() => loader.remove(), 900);
+    }, 300);
+
+  } catch(e) {
+    loaderText.textContent = 'something went wrong';
+    console.error(e);
+  }
+}
+
+function getNextIndex() {
+  let next = Math.floor(Math.random() * PHOTOS.length);
+  if (next === current) next = (next + 1) % PHOTOS.length;
+  return next;
+}
+
+function doTransition(nextIndex) {
+  const next     = PHOTOS[nextIndex];
+  const incoming = activeSlot === 'A' ? photoB : photoA;
+  const outgoing = activeSlot === 'A' ? photoA : photoB;
+
+  // Prepare incoming: set image, make sure opacity is 0, no transition yet
+  incoming.style.transition = 'none';
+  incoming.style.opacity = '0';
+  incoming.style.backgroundImage = `url('${next.url}')`;
+  incoming.classList.add('visible');
+
+  // One frame to let the browser register opacity:0 before animating
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      // Now animate both simultaneously with identical timing
+      const t = 'opacity 0.45s ease';
+      incoming.style.transition = t;
+      outgoing.style.transition = t;
+      incoming.style.opacity = '1';
+      outgoing.style.opacity = '0';
+
+      setTimeout(() => {
+        outgoing.classList.remove('visible');
+        outgoing.style.transition = '';
+        outgoing.style.opacity = '';
+        incoming.style.transition = '';
+        incoming.style.opacity = '';
+
+        yearLabel.textContent = next.year;
+        activeSlot = activeSlot === 'A' ? 'B' : 'A';
+        current = nextIndex;
+        isTransitioning = false;
+      }, 460);
+    });
+  });
+}
+
+function advance() {
+  if (isTransitioning || overlayOpen || !PHOTOS.length) return;
+  isTransitioning = true;
+
+  if (!interacted) {
+    interacted = true;
+    hint.classList.add('hidden');
+  }
+
+  const nextIndex = getNextIndex();
+  doTransition(nextIndex);
+  if (!loaded.has(PHOTOS[nextIndex].url)) {
+    preloadOne(PHOTOS[nextIndex].url);
+  }
+}
+
+// ── Overlay ──
+function openOverlay()  { overlayOpen = true;  overlay.classList.add('open'); }
+function closeOverlay() { overlayOpen = false; overlay.classList.remove('open'); }
+
+infoBtn.addEventListener('click', e => { e.stopPropagation(); openOverlay(); });
+overlayClose.addEventListener('click', e => { e.stopPropagation(); closeOverlay(); });
+overlay.addEventListener('click', e => { if (e.target === overlay) closeOverlay(); });
+overlay.querySelectorAll('a').forEach(a => a.addEventListener('click', e => e.stopPropagation()));
+infoBtn.addEventListener('touchend', e => { e.preventDefault(); e.stopPropagation(); openOverlay(); }, { passive: false });
+overlayClose.addEventListener('touchend', e => { e.preventDefault(); e.stopPropagation(); closeOverlay(); }, { passive: false });
+
+document.addEventListener('click', () => { if (!overlayOpen) advance(); });
+document.addEventListener('touchend', e => {
+  if (overlayOpen) return;
+  e.preventDefault();
+  advance();
+}, { passive: false });
+
+document.addEventListener('mousemove', e => {
+  cursorDot.style.left = e.clientX + 'px';
+  cursorDot.style.top  = e.clientY + 'px';
+});
+document.addEventListener('mousedown', () => cursorDot.classList.add('clicking'));
+document.addEventListener('mouseup',   () => cursorDot.classList.remove('clicking'));
+
+document.addEventListener('keydown', e => {
+  if (e.code === 'Escape' && overlayOpen) { closeOverlay(); return; }
+  if ((e.code === 'Space' || e.code === 'ArrowRight') && !overlayOpen) {
+    e.preventDefault();
+    advance();
+  }
+});
+
+init();
+</script>
+</body>
+</html>
